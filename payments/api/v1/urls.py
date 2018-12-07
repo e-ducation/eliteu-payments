@@ -9,6 +9,7 @@ from django.conf.urls import url
 from .views import (
     AlipaySuccessAPIView,
     AlipayAsyncnotifyAPIView,
+    AppAlipayAsyncnotifyAPIView,
     WechatAsyncnotifyAPIView
 )
 
@@ -23,6 +24,11 @@ urlpatterns = [
         r'payments/alipay/alipayasyncnotify/$',
         AlipayAsyncnotifyAPIView.as_view(),
         name='alipay_asyncnotify'
+    ),
+    url(
+        r'payments/alipay/app_alipayasyncnotify/$',
+        AppAlipayAsyncnotifyAPIView.as_view(),
+        name='app_alipay_asyncnotify'
     ),
     url(
         r'payments/wechat/wechatasyncnotify/$',
