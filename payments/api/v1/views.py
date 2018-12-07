@@ -11,7 +11,8 @@ from django.http import HttpResponseRedirect, HttpResponse
 
 from rest_framework.views import APIView
 
-from payments.alipay.alipay import notify_verify
+from payments.alipay.alipay import notify_verify as alipay_notify_verify
+from payments.alipay.app_alipay import notify_verify as app_alipay_notify_verify
 from payments.wechatpay.wxpay import Wxpay_server_pub
 from payments.alipay.config import ALIPAYSettings
 # 需要放在安全区的变量
@@ -42,7 +43,7 @@ class AlipaySuccessAPIView(APIView):
         """
 
         global lock, dish
-        if notify_verify(request.query_params):
+        if alipay_notify_verify(request.query_params):
             out_trade_no = request.query_params.get("out_trade_no", "")
             extra_common_param = request.query_params.get("extra_common_param")
 
@@ -91,7 +92,7 @@ class AlipayAsyncnotifyAPIView(APIView):
         """
 
         global lock, dish
-        if notify_verify(request.data):
+        if alipay_notify_verify(request.data):
             extra_common_param = request.data.get("extra_common_param")
             out_trade_no = request.data.get("out_trade_no", "")
 
@@ -110,6 +111,52 @@ class AlipayAsyncnotifyAPIView(APIView):
                 if rep_data.get('result') == "success":
                     return HttpResponse('success')
         return HttpResponse("fail")
+
+
+class AppAlipayAsyncnotifyAPIView(APIView):
+    """
+    alipay asyncnotify api view
+    """
+
+    def post(self, request, *args, **kwargs):
+        """
+        支付宝支付 异步
+        服务器后台通知，买家付完款后，支付宝会调用notify_url这个页面所在的页面，并把相应的参数传递到这个页面，
+        这个页面根据支付宝传递过来的参数修改网站订单的状态。
+        更新完订单后需要在页面上打印一个success给支付宝，如果反馈给支付宝的不是success,支付宝会继续调用这个页面。
+        传递过来的参数是post格式
+        商户需要验证该通知数据中的out_trade_no是否为商户系统中创建的订单号，
+        并判断total_fee是否确实为该订单的实际金额（即商户订单创建时的金额），
+        同时需要校验通知中的seller_id（或者seller_email) 是否为out_trade_no这笔单据的对应的操作方，
+        （有的时候，一个商户可能有多个seller_id/seller_email），
+        上述有任何一个验证不通过，则表明本次通知是异常通知，务必忽略。
+        在上述验证通过后商户必须根据支付宝不同类型的业务通知，正确的进行不同的业务处理，并且过滤重复的通知结果数据。
+        在支付宝的业务通知中，只有交易通知状态为TRADE_SUCCESS或TRADE_FINISHED时，支付宝才会认定为买家付款成功。
+        如果商户需要对同步返回的数据做验签，必须通过服务端的签名验签代码逻辑来实现。
+        如果商户未正确处理业务通知，存在潜在的风险，商户自行承担因此而产生的所有损失。
+        """
+
+        global lock, dish
+        if app_alipay_notify_verify(request.data):
+            extra_common_param = request.data.get("extra_common_param")
+            out_trade_no = request.data.get("out_trade_no", "")
+
+            post_data = {
+                "trade_type": "alipay",
+                "out_trade_no": out_trade_no,
+                "trade_no": request.data.get("trade_no"),
+                "total_fee": request.data.get("total_fee"),
+                "buyer_email": request.data.get("buyer_email"),
+                "extra_common_param": request.data.get("extra_common_param"),
+            }
+
+            if out_trade_no != "":
+                rep = requests.post(extra_common_param, data=post_data)
+                rep_data = rep.json()
+                if rep_data.get('result') == "success":
+                    return HttpResponse('success')
+        return HttpResponse("fail")
+
 
 
 class WechatAsyncnotifyAPIView(APIView):
