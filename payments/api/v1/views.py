@@ -158,7 +158,6 @@ class AppAlipayAsyncnotifyAPIView(APIView):
         return HttpResponse("fail")
 
 
-
 class WechatAsyncnotifyAPIView(APIView):
     """
     wechat asyncnotify api view
