@@ -175,6 +175,7 @@ class WechatAsyncnotifyAPIView(APIView):
             post_data = {
                 'trade_type': 'wechat',
                 'trade_no': pay_result.get('transaction_id'),
+                "total_fee": pay_result.get("total_fee"),
                 'out_trade_no': pay_result.get('out_trade_no'),
             }
             if pay_result.get('attach'):
