@@ -369,6 +369,21 @@ class UnifiedOrder_pub(Wxpay_client_pub):
         return result
 
 
+class AppOrder_pub(Wxpay_client_pub):
+
+    def get_request_params(self):
+        '''
+        return sign, noncestr, timestamp
+        '''
+        self.parameters["appid"] = WxPayConf_pub.APPID  # 公众账号ID
+        self.parameters["partnerid"] = WxPayConf_pub.MCHID  # 商户号
+        self.parameters["noncestr"] = self.createNoncestr()  # 随机字符串
+        self.parameters["timestamp"] = str(int(time.time()))  # 时间戳
+        self.parameters["package"] = 'Sign=WXPay'  # 扩展字段
+        return (self.getSign(self.parameters), self.parameters["noncestr"],
+                self.parameters["timestamp"], self.parameters["package"])
+
+
 class OrderQuery_pub(Wxpay_client_pub):
     """订单查询接口"""
 
@@ -607,14 +622,3 @@ class NativeLink_pub(Common_util_pub):
         """返回链接"""
         self.createLink()
         return self.url
-
-
-def test():
-    c = HttpClient()
-    assert c.get("http://www.baidu.com")[:15] == "<!DOCTYPE html>"
-    c2 = HttpClient()
-    assert id(c) == id(c2)
-
-
-if __name__ == "__main__":
-    test()
