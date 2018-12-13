@@ -94,7 +94,7 @@ class AlipayAsyncnotifyAPIView(APIView):
         """
 
         global lock, dish
-        if alipay_notify_verify(request.data):
+        if notify_verify(request.data):
             extra_common_param = request.data.get("extra_common_param")
             out_trade_no = request.data.get("out_trade_no", "")
 
