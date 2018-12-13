@@ -457,14 +457,3 @@ class NativeCallH5_pub(WxpayH5_server_pub):
         """获取product_id"""
         product_id = self.data["product_id"]
         return product_id
-
-
-def test():
-    c = HttpClient()
-    assert c.get("http://www.baidu.com")[:15] == "<!DOCTYPE html>"
-    c2 = HttpClient()
-    assert id(c) == id(c2)
-
-
-if __name__ == "__main__":
-    test()
