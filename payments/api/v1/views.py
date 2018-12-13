@@ -16,6 +16,7 @@ from payments.alipay.alipay import notify_verify
 from payments.alipay.app_alipay import smart_str
 from payments.wechatpay.wxapp_pay import Wxpay_server_pub as AppWxpay_server_pub
 from payments.wechatpay.wxpay import Wxpay_server_pub
+from payments.wechatpay.wxh5_pay import WxpayH5_server_pub
 from payments.alipay.config import ALIPAYSettings
 # 需要放在安全区的变量
 dish = 0
@@ -166,6 +167,7 @@ class WechatAsyncnotifyAPIView(APIView):
             wxpay_server_pub = AppWxpay_server_pub()
             wxpay_server_pub.saveData(request.body)
         ret_str = 'FAIL'
+        log.error(request.body)
         if wxpay_server_pub.checkSign():
             pay_result = wxpay_server_pub.getData()
             post_data = {
@@ -181,3 +183,33 @@ class WechatAsyncnotifyAPIView(APIView):
                 if rep_data.get('result') == "success":
                     ret_str = 'SUCCESS'
         return HttpResponse(wxpay_server_pub.arrayToXml({'return_code': ret_str}))
+
+
+class WechatH5AsyncnotifyAPIView(APIView):
+    """
+    wechat H5 asyncnotify api view
+    """
+
+    def post(self, request, *args, **kwargs):
+        """
+        微信H5回调支付
+        """
+        wxpayh5_server_pub = WxpayH5_server_pub()
+        wxpayh5_server_pub.saveData(request.body)
+        log.error(request.body)
+        ret_str = 'FAIL'
+
+        if wxpayh5_server_pub.checkSign():
+            pay_result = wxpayh5_server_pub.getData()
+            post_data = {
+                'trade_type': 'wechat',
+                'trade_no': pay_result.get('transaction_id'),
+                "total_fee": pay_result.get("total_fee"),
+                'out_trade_no': pay_result.get('out_trade_no'),
+            }
+            if pay_result.get('attach'):
+                rep = requests.post(pay_result['attach'], data=post_data)
+                rep_data = rep.json()
+                if rep_data.get('result') == "success":
+                    ret_str = 'SUCCESS'
+        return HttpResponse(wxpayh5_server_pub.arrayToXml({'return_code': ret_str}))

@@ -1,8 +1,6 @@
 # -*- coding:utf-8 -*-
 """
-Created on 2016-07-13
-
-@author: 173770922@qq.com
+Created on 2018-12-12
 
  * 微信支付帮助库
  * ====================================================
@@ -33,6 +31,7 @@ Created on 2016-07-13
 
 """
 from __future__ import unicode_literals
+import logging
 import hashlib
 import json
 import threading
@@ -54,42 +53,36 @@ except ImportError:
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
+log = logging.getLogger(__name__)
 
 
-class WxPayConf_pub(object):
+class WxH5PayConf_pub(object):
     """配置账号信息"""
 
     # =======【基本信息设置】=====================================
     # 微信公众号身份的唯一标识。审核通过后，在微信发送的邮件中查看
-    APPID = settings.WECHAT_PAY_INFO['basic_info']['APPID']
+    APPID = settings.WECHAT_H5_PAY_INFO['basic_info']['APPID']
     # JSAPI接口中获取openid，审核后在公众平台开启开发模式后可查看
-    APPSECRET = settings.WECHAT_PAY_INFO['basic_info']['APPSECRET']
+    APPSECRET = settings.WECHAT_H5_PAY_INFO['basic_info']['APPSECRET']
     # 受理商ID，身份标识
-    MCHID = settings.WECHAT_PAY_INFO['basic_info']['MCHID']
+    MCHID = settings.WECHAT_H5_PAY_INFO['basic_info']['MCHID']
     # 商户支付密钥Key。审核通过后，在微信发送的邮件中查看
-    KEY = settings.WECHAT_PAY_INFO['basic_info']['KEY']
-    ACCESS_TOKEN = settings.WECHAT_PAY_INFO['basic_info']['ACCESS_TOKEN']
+    KEY = settings.WECHAT_H5_PAY_INFO['basic_info']['KEY']
+    ACCESS_TOKEN = settings.WECHAT_H5_PAY_INFO['basic_info']['ACCESS_TOKEN']
 
-    # 加入课程成功模版id
-    BUY_COURSES_SUCCESS_TEMPLATE_ID = settings.WECHAT_PAY_INFO['other_info']['BUY_COURSES_SUCCESS_TEMPLATE_ID']
-    BUY_COURSES_SUCCESS_HREF_URL = settings.WECHAT_PAY_INFO['other_info']['BUY_COURSES_SUCCESS_HREF_URL']
-
-    COIN_SUCCESS_TEMPLATE_ID = settings.WECHAT_PAY_INFO['other_info']['COIN_SUCCESS_TEMPLATE_ID']
-    COIN_SUCCESS_HREF_URL = settings.WECHAT_PAY_INFO['other_info']['COIN_SUCCESS_HREF_URL']
-
-    SERVICE_TEL = settings.WECHAT_PAY_INFO['other_info']['SERVICE_TEL']
+    SERVICE_TEL = settings.WECHAT_H5_PAY_INFO['other_info']['SERVICE_TEL']
     # =======【异步通知url设置】===================================
     # 异步通知url，商户根据实际开发过程设定
-    NOTIFY_URL = settings.WECHAT_PAY_INFO['other_info']['NOTIFY_URL']
+    NOTIFY_URL = settings.WECHAT_H5_PAY_INFO['other_info']['NOTIFY_URL']
 
     # =======【JSAPI路径设置】===================================
     # 获取access_token过程中的跳转uri，通过跳转将code传入jsapi支付页面
-    JS_API_CALL_URL = settings.WECHAT_PAY_INFO['other_info']['JS_API_CALL_URL']
+    JS_API_CALL_URL = settings.WECHAT_H5_PAY_INFO['other_info']['JS_API_CALL_URL']
 
     # =======【证书路径设置】=====================================
     # 证书路径,注意应该填写绝对路径
-    SSLCERT_PATH = settings.WECHAT_PAY_INFO['other_info']['SSLCERT_PATH']
-    SSLKEY_PATH = settings.WECHAT_PAY_INFO['other_info']['SSLKEY_PATH']
+    SSLCERT_PATH = settings.WECHAT_H5_PAY_INFO['other_info']['SSLCERT_PATH']
+    SSLKEY_PATH = settings.WECHAT_H5_PAY_INFO['other_info']['SSLKEY_PATH']
     # 上面为php版本专用
 
     # =======【curl超时设置】===================================
@@ -97,6 +90,7 @@ class WxPayConf_pub(object):
 
     # =======【HTTP客户端设置】===================================
     HTTP_CLIENT = "CURL"  # ("URLLIB", "CURL")
+    SPBILL_CREATE_IP = settings.WECHAT_H5_PAY_INFO['other_info']['SPBILL_CREATE_IP']
 
 
 class Singleton(object):
@@ -156,9 +150,9 @@ class CurlClient(object):
         # 默认格式为PEM，可以注释
         if cert:
             self.curl.setopt(pycurl.SSLKEYTYPE, "PEM")
-            self.curl.setopt(pycurl.SSLKEY, WxPayConf_pub.SSLKEY_PATH)
+            self.curl.setopt(pycurl.SSLKEY, WxH5PayConf_pub.SSLKEY_PATH)
             self.curl.setopt(pycurl.SSLCERTTYPE, "PEM")
-            self.curl.setopt(pycurl.SSLCERT, WxPayConf_pub.SSLCERT_PATH)
+            self.curl.setopt(pycurl.SSLCERT, WxH5PayConf_pub.SSLCERT_PATH)
         # post提交方式
         if post:
             self.curl.setopt(pycurl.POST, True)
@@ -173,13 +167,13 @@ class CurlClient(object):
 class HttpClient(Singleton):
     @classmethod
     def configure(cls):
-        if pycurl is not None and WxPayConf_pub.HTTP_CLIENT != "URLLIB":
+        if pycurl is not None and WxH5PayConf_pub.HTTP_CLIENT != "URLLIB":
             return CurlClient
         else:
             return UrllibClient
 
 
-class Common_util_pub(object):
+class CommonH5_util_pub(object):
     """所有接口的基类"""
 
     def trimString(self, value):
@@ -210,7 +204,7 @@ class Common_util_pub(object):
         # 签名步骤一：按字典序排序参数,formatBizQueryParaMap已做
         String = self.formatBizQueryParaMap(obj, False)
         # 签名步骤二：在string后加入KEY
-        String = "{0}&key={1}".format(String, WxPayConf_pub.KEY)
+        String = "{0}&key={1}".format(String, WxH5PayConf_pub.KEY)
         # 签名步骤三：MD5加密
         String = hashlib.md5(String).hexdigest()
         # 签名步骤四：所有字符转为大写
@@ -246,69 +240,7 @@ class Common_util_pub(object):
         return HttpClient().postXmlSSL(xml, url, second=second)
 
 
-class JsApi_pub(Common_util_pub):
-    """JSAPI支付——H5网页端调起支付接口"""
-    code = None    # code码，用以获取openid
-    openid = None   # 用户的openid
-    parameters = None    # jsapi参数，格式为json
-    prepay_id = None   # 使用统一支付接口得到的预支付id
-    curl_timeout = None   # curl超时时间
-
-    def __init__(self, timeout=WxPayConf_pub.CURL_TIMEOUT):
-        self.curl_timeout = timeout
-
-    def createOauthUrlForCode(self, redirectUrl):
-        """生成可以获得code的url"""
-        urlObj = {}
-        urlObj["appid"] = WxPayConf_pub.APPID
-        urlObj["redirect_uri"] = redirectUrl
-        urlObj["response_type"] = "code"
-        urlObj["scope"] = "snsapi_base"
-        urlObj["state"] = "STATE#wechat_redirect"
-        bizString = self.formatBizQueryParaMap(urlObj, False)
-        return "https://open.weixin.qq.com/connect/oauth2/authorize?" + bizString
-
-    def createOauthUrlForOpenid(self):
-        """生成可以获得openid的url"""
-        urlObj = {}
-        urlObj["appid"] = WxPayConf_pub.APPID
-        urlObj["secret"] = WxPayConf_pub.APPSECRET
-        urlObj["code"] = self.code
-        urlObj["grant_type"] = "authorization_code"
-        bizString = self.formatBizQueryParaMap(urlObj, False)
-        return "https://api.weixin.qq.com/sns/oauth2/access_token?" + bizString
-
-    def getOpenid(self):
-        """通过curl向微信提交code，以获取openid"""
-        url = self.createOauthUrlForOpenid()
-        data = HttpClient().get(url)
-        self.openid = json.loads(data)["openid"]
-        return self.openid
-
-    def setPrepayId(self, prepayId):
-        """设置prepay_id"""
-        self.prepay_id = prepayId
-
-    def setCode(self, code):
-        """设置code"""
-        self.code = code
-
-    def getParameters(self):
-        """设置jsapi的参数"""
-        jsApiObj = {}
-        jsApiObj["appId"] = WxPayConf_pub.APPID
-        timeStamp = int(time.time())
-        jsApiObj["timeStamp"] = "{0}".format(timeStamp)
-        jsApiObj["nonceStr"] = self.createNoncestr()
-        jsApiObj["package"] = "prepay_id={0}".format(self.prepay_id)
-        jsApiObj["signType"] = "MD5"
-        jsApiObj["paySign"] = self.getSign(jsApiObj)
-        self.parameters = json.dumps(jsApiObj)
-
-        return self.parameters
-
-
-class Wxpay_client_pub(Common_util_pub):
+class WxpayH5_client_pub(CommonH5_util_pub):
     """请求型接口的基类"""
     response = None   # 微信返回的响应
     url = None        # 接口链接
@@ -324,8 +256,8 @@ class Wxpay_client_pub(Common_util_pub):
 
     def createXml(self):
         """设置标配的请求参数，生成签名，生成接口参数xml"""
-        self.parameters["appid"] = WxPayConf_pub.APPID    # 公众账号ID
-        self.parameters["mch_id"] = WxPayConf_pub.MCHID    # 商户号
+        self.parameters["appid"] = WxH5PayConf_pub.APPID    # 公众账号ID
+        self.parameters["mch_id"] = WxH5PayConf_pub.MCHID    # 商户号
         self.parameters["nonce_str"] = self.createNoncestr()    # 随机字符串
         self.parameters["sign"] = self.getSign(self.parameters)    # 签名
         return self.arrayToXml(self.parameters)
@@ -349,15 +281,15 @@ class Wxpay_client_pub(Common_util_pub):
         return self.result
 
 
-class UnifiedOrder_pub(Wxpay_client_pub):
+class UnifiedOrderH5_pub(WxpayH5_client_pub):
     """统一支付接口类"""
 
-    def __init__(self, timeout=WxPayConf_pub.CURL_TIMEOUT):
+    def __init__(self, timeout=WxH5PayConf_pub.CURL_TIMEOUT):
         # 设置接口链接
         self.url = "https://api.mch.weixin.qq.com/pay/unifiedorder"
         # 设置curl超时时间
         self.curl_timeout = timeout
-        super(UnifiedOrder_pub, self).__init__()
+        super(UnifiedOrderH5_pub, self).__init__()
 
     def createXml(self):
         """生成接口参数xml"""
@@ -367,9 +299,9 @@ class UnifiedOrder_pub(Wxpay_client_pub):
         if self.parameters["trade_type"] == "JSAPI" and self.parameters["openid"] is None:
             raise ValueError("JSAPI need openid parameters")
 
-        self.parameters["appid"] = WxPayConf_pub.APPID   # 公众账号ID
-        self.parameters["mch_id"] = WxPayConf_pub.MCHID    # 商户号
-        self.parameters["spbill_create_ip"] = "127.0.0.1"    # 终端ip
+        self.parameters["appid"] = WxH5PayConf_pub.APPID   # 公众账号ID
+        self.parameters["mch_id"] = WxH5PayConf_pub.MCHID    # 商户号
+        self.parameters["spbill_create_ip"] =  WxH5PayConf_pub.SPBILL_CREATE_IP  # 终端ip
         self.parameters["nonce_str"] = self.createNoncestr()    # 随机字符串
         self.parameters["sign"] = self.getSign(self.parameters)    # 签名
         return self.arrayToXml(self.parameters)
@@ -388,6 +320,11 @@ class UnifiedOrder_pub(Wxpay_client_pub):
         code_url = self.result["code_url"]
         return code_url
 
+    def getMwebUrl(self):
+        """获取mweb_url"""
+        mweb_url = self.result["mweb_url"]
+        return mweb_url
+
     def getUndResult(self):
         """获取sign"""
         self.result = self.xmlToArray(self.response)
@@ -395,15 +332,15 @@ class UnifiedOrder_pub(Wxpay_client_pub):
         return result
 
 
-class OrderQuery_pub(Wxpay_client_pub):
+class OrderQueryH5_pub(WxpayH5_client_pub):
     """订单查询接口"""
 
-    def __init__(self, timeout=WxPayConf_pub.CURL_TIMEOUT):
+    def __init__(self, timeout=WxH5PayConf_pub.CURL_TIMEOUT):
         # 设置接口链接
         self.url = "https://api.mch.weixin.qq.com/pay/orderquery"
         # 设置curl超时时间
         self.curl_timeout = timeout
-        super(OrderQuery_pub, self).__init__()
+        super(OrderQueryH5_pub, self).__init__()
 
     def createXml(self):
         """生成接口参数xml"""
@@ -412,113 +349,30 @@ class OrderQuery_pub(Wxpay_client_pub):
         # if any(self.parameters[key] is None for key in ("out_trade_no", "transaction_id")):
             # raise ValueError("missing parameter")
 
-        self.parameters["appid"] = WxPayConf_pub.APPID   # 公众账号ID
-        self.parameters["mch_id"] = WxPayConf_pub.MCHID   # 商户号
+        self.parameters["appid"] = WxH5PayConf_pub.APPID   # 公众账号ID
+        self.parameters["mch_id"] = WxH5PayConf_pub.MCHID   # 商户号
         self.parameters["nonce_str"] = self.createNoncestr()   # 随机字符串
         self.parameters["sign"] = self.getSign(self.parameters)   # 签名
         return self.arrayToXml(self.parameters)
 
 
-class Refund_pub(Wxpay_client_pub):
-    """退款申请接口"""
-
-    def __init__(self, timeout=WxPayConf_pub.CURL_TIMEOUT):
-        # 设置接口链接
-        self.url = "https://api.mch.weixin.qq.com/secapi/pay/refund"
-        # 设置curl超时时间
-        self.curl_timeout = timeout
-        super(Refund_pub, self).__init__()
-
-    def createXml(self):
-        """生成接口参数xml"""
-        if any(self.parameters[key] is None for key in ("transaction_id", "out_refund_no", "total_fee", "refund_fee", "op_user_id")):
-            raise ValueError("missing parameter")
-
-        self.parameters["appid"] = WxPayConf_pub.APPID   # 公众账号ID
-        self.parameters["mch_id"] = WxPayConf_pub.MCHID   # 商户号
-        self.parameters["nonce_str"] = self.createNoncestr()   # 随机字符串
-        self.parameters["sign"] = self.getSign(self.parameters)    # 签名
-        return self.arrayToXml(self.parameters)
-
-    def getResult(self):
-        """ 获取结果，使用证书通信(需要双向证书)"""
-        self.postXmlSSL()
-        self.result = self.xmlToArray(self.response)
-        return self.result
-
-
-class RefundQuery_pub(Wxpay_client_pub):
-    """退款查询接口"""
-
-    def __init__(self, timeout=WxPayConf_pub.CURL_TIMEOUT):
-        # 设置接口链接
-        self.url = "https://api.mch.weixin.qq.com/pay/refundquery"
-        # 设置curl超时时间
-        self.curl_timeout = timeout
-        super(RefundQuery_pub, self).__init__()
-
-    def createXml(self):
-        """生成接口参数xml"""
-        if any(self.parameters[key] is None for key in ("out_refund_no", "out_trade_no", "transaction_id", "refund_id")):
-            raise ValueError("missing parameter")
-        self.parameters["appid"] = WxPayConf_pub.APPID    # 公众账号ID
-        self.parameters["mch_id"] = WxPayConf_pub.MCHID    # 商户号
-        self.parameters["nonce_str"] = self.createNoncestr()    # 随机字符串
-        self.parameters["sign"] = self.getSign(self.parameters)    # 签名
-        return self.arrayToXml(self.parameters)
-
-    def getResult(self):
-        """ 获取结果，使用证书通信(需要双向证书)"""
-        self.postXmlSSL()
-        self.result = self.xmlToArray(self.response)
-        return self.result
-
-
-class DownloadBill_pub(Wxpay_client_pub):
-    """对账单接口"""
-
-    def __init__(self, timeout=WxPayConf_pub.CURL_TIMEOUT):
-        # 设置接口链接
-        self.url = "https://api.mch.weixin.qq.com/pay/downloadbill"
-        # 设置curl超时时间
-        self.curl_timeout = timeout
-        super(DownloadBill_pub, self).__init__()
-
-    def createXml(self):
-        """生成接口参数xml"""
-        if any(self.parameters[key] is None for key in ("bill_date", )):
-            raise ValueError("missing parameter")
-
-        self.parameters["appid"] = WxPayConf_pub.APPID    # 公众账号ID
-        self.parameters["mch_id"] = WxPayConf_pub.MCHID    # 商户号
-        self.parameters["nonce_str"] = self.createNoncestr()    # 随机字符串
-        self.parameters["sign"] = self.getSign(self.parameters)    # 签名
-        return self.arrayToXml(self.parameters)
-
-    def getResult(self):
-        """获取结果，默认不使用证书"""
-        self.postXml()
-        self.result = self.xmlToArray(self.response)
-        return self.result
-
-
-class ShortUrl_pub(Wxpay_client_pub):
+class ShortUrlH5_pub(WxpayH5_client_pub):
     """短链接转换接口"""
 
-    def __init__(self, timeout=WxPayConf_pub.CURL_TIMEOUT):
+    def __init__(self, timeout=WxH5PayConf_pub.CURL_TIMEOUT):
         # 设置接口链接
         self.url = "https://api.mch.weixin.qq.com/tools/shorturl"
         # 设置curl超时时间
         self.curl_timeout = timeout
-        super(ShortUrl_pub, self).__init__()
+        super(ShortUrlH5_pub, self).__init__()
 
     def createXml(self):
         """生成接口参数xml"""
         if any(self.parameters[key] is None for key in ("long_url", )):
             raise ValueError("missing parameter")
 
-        self.parameters["appid"] = WxPayConf_pub.APPID    # 公众账号ID
-        self.parameters["mch_id"] = WxPayConf_pub.MCHID    # 商户号
+        self.parameters["appid"] = WxH5PayConf_pub.APPID    # 公众账号ID
+        self.parameters["mch_id"] = WxH5PayConf_pub.MCHID    # 商户号
         self.parameters["nonce_str"] = self.createNoncestr()    # 随机字符串
         self.parameters["sign"] = self.getSign(self.parameters)    # 签名
         return self.arrayToXml(self.parameters)
@@ -530,7 +384,7 @@ class ShortUrl_pub(Wxpay_client_pub):
         return prepay_id
 
 
-class Wxpay_server_pub(Common_util_pub):
+class WxpayH5_server_pub(CommonH5_util_pub):
     """响应型接口基类"""
     SUCCESS, FAIL = "SUCCESS", "FAIL"
 
@@ -574,26 +428,26 @@ class Wxpay_server_pub(Common_util_pub):
         return product_id
 
 
-class Notify_pub(Wxpay_server_pub):
+class NotifyH5_pub(WxpayH5_server_pub):
     """通用通知接口"""
     def createXml(self):
         """生成接口参数xml"""
-        self.returnParameters["appid"] = WxPayConf_pub.APPID   # 公众账号ID
-        self.returnParameters["mch_id"] = WxPayConf_pub.MCHID   # 商户号
+        self.returnParameters["appid"] = WxH5PayConf_pub.APPID   # 公众账号ID
+        self.returnParameters["mch_id"] = WxH5PayConf_pub.MCHID   # 商户号
         self.returnParameters["nonce_str"] = self.createNoncestr()   # 随机字符串
         self.returnParameters["sign"] = self.getSign(self.returnParameters)   # 签名
 
         return self.arrayToXml(self.returnParameters)
 
 
-class NativeCall_pub(Wxpay_server_pub):
+class NativeCallH5_pub(WxpayH5_server_pub):
     """请求商家获取商品信息接口"""
 
     def createXml(self):
         """生成接口参数xml"""
         if self.returnParameters["return_code"] == self.SUCCESS:
-            self.returnParameters["appid"] = WxPayConf_pub.APPID   # 公众账号ID
-            self.returnParameters["mch_id"] = WxPayConf_pub.MCHID   # 商户号
+            self.returnParameters["appid"] = WxH5PayConf_pub.APPID   # 公众账号ID
+            self.returnParameters["mch_id"] = WxH5PayConf_pub.MCHID   # 商户号
             self.returnParameters["nonce_str"] = self.createNoncestr()   # 随机字符串
             self.returnParameters["sign"] = self.getSign(self.returnParameters)   # 签名
 
@@ -603,44 +457,3 @@ class NativeCall_pub(Wxpay_server_pub):
         """获取product_id"""
         product_id = self.data["product_id"]
         return product_id
-
-
-class NativeLink_pub(Common_util_pub):
-    """静态链接二维码"""
-    url = None   # 静态链接
-
-    def __init__(self):
-        self.parameters = {}   # 静态链接参数
-
-    def setParameter(self, parameter, parameterValue):
-        """设置参数"""
-        self.parameters[self.trimString(parameter)] = self.trimString(parameterValue)
-
-    def createLink(self):
-        if any(self.parameters[key] is None for key in ("product_id", )):
-            raise ValueError("missing parameter")
-
-        self.parameters["appid"] = WxPayConf_pub.APPID    # 公众账号ID
-        self.parameters["mch_id"] = WxPayConf_pub.MCHID    # 商户号
-        time_stamp = int(time.time())
-        self.parameters["time_stamp"] = "{0}".format(time_stamp)    # 时间戳
-        self.parameters["nonce_str"] = self.createNoncestr()    # 随机字符串
-        self.parameters["sign"] = self.getSign(self.parameters)    # 签名
-        bizString = self.formatBizQueryParaMap(self.parameters, False)
-        self.url = "weixin://wxpay/bizpayurl?" + bizString
-
-    def getUrl(self):
-        """返回链接"""
-        self.createLink()
-        return self.url
-
-
-def test():
-    c = HttpClient()
-    assert c.get("http://www.baidu.com")[:15] == "<!DOCTYPE html>"
-    c2 = HttpClient()
-    assert id(c) == id(c2)
-
-
-if __name__ == "__main__":
-    test()
