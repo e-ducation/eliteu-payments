@@ -33,7 +33,6 @@ Created on 2016-07-13
 
 """
 from __future__ import unicode_literals
-import logging
 import hashlib
 import json
 import threading
@@ -55,7 +54,6 @@ except ImportError:
 import sys
 reload(sys)
 sys.setdefaultencoding('utf8')
-log = logging.getLogger(__name__)
 
 
 class WxPayConf_pub(object):
