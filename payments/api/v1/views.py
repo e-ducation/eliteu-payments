@@ -14,6 +14,7 @@ from alipay.aop.api.util.SignatureUtils import get_sign_content, verify_with_rsa
 
 from payments.alipay.alipay import notify_verify
 from payments.alipay.app_alipay import smart_str
+from payments.wechatpay.wxapp_pay import Wxpay_server_pub as AppWxpay_server_pub
 from payments.wechatpay.wxpay import Wxpay_server_pub
 from payments.alipay.config import ALIPAYSettings
 # 需要放在安全区的变量
@@ -161,11 +162,15 @@ class WechatAsyncnotifyAPIView(APIView):
         """
         wxpay_server_pub = Wxpay_server_pub()
         wxpay_server_pub.saveData(request.body)
+        if wxpay_server_pub.getData().get('trade_type') == "APP":
+            wxpay_server_pub = AppWxpay_server_pub()
+            wxpay_server_pub.saveData(request.body)
         ret_str = 'FAIL'
         if wxpay_server_pub.checkSign():
             pay_result = wxpay_server_pub.getData()
             post_data = {
                 'trade_type': 'wechat',
+                'wechat_trade_type': pay_result.get('trade_type'),
                 'trade_no': pay_result.get('transaction_id'),
                 "total_fee": pay_result.get("total_fee"),
                 'out_trade_no': pay_result.get('out_trade_no'),
