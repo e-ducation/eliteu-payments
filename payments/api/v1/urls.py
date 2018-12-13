@@ -10,7 +10,8 @@ from .views import (
     AlipaySuccessAPIView,
     AlipayAsyncnotifyAPIView,
     AppAlipayAsyncnotifyAPIView,
-    WechatAsyncnotifyAPIView
+    WechatAsyncnotifyAPIView,
+    WechatH5AsyncnotifyAPIView
 )
 
 
@@ -34,5 +35,10 @@ urlpatterns = [
         r'payments/wechat/wechatasyncnotify/$',
         WechatAsyncnotifyAPIView.as_view(),
         name='wechat_asyncnotify'
+    ),
+    url(
+        r'payments/wechat/wechath5asyncnotify/$',
+        WechatH5AsyncnotifyAPIView.as_view(),
+        name='wechath5_asyncnotify'
     ),
 ]
