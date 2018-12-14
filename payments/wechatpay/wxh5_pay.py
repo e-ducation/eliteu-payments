@@ -39,7 +39,8 @@ import time
 import random
 import urllib2
 import xml.etree.ElementTree as ET
-
+from json import load
+from urllib2 import urlopen
 from urllib import quote
 
 from django.conf import settings
@@ -301,7 +302,7 @@ class UnifiedOrderH5_pub(WxpayH5_client_pub):
 
         self.parameters["appid"] = WxH5PayConf_pub.APPID   # 公众账号ID
         self.parameters["mch_id"] = WxH5PayConf_pub.MCHID    # 商户号
-        self.parameters["spbill_create_ip"] =  WxH5PayConf_pub.SPBILL_CREATE_IP  # 终端ip
+        self.parameters["spbill_create_ip"] = get_out_ip()  # 终端ip
         self.parameters["nonce_str"] = self.createNoncestr()    # 随机字符串
         self.parameters["sign"] = self.getSign(self.parameters)    # 签名
         return self.arrayToXml(self.parameters)
@@ -457,3 +458,15 @@ class NativeCallH5_pub(WxpayH5_server_pub):
         """获取product_id"""
         product_id = self.data["product_id"]
         return product_id
+
+
+def get_out_ip():
+    """
+    获取外网IP
+    :return:
+    """
+    try:
+        my_ip = load(urlopen('http://httpbin.org/ip'))['origin']
+    except Exception as ex:
+        my_ip = ""
+    return my_ip
