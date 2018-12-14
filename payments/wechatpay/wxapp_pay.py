@@ -373,7 +373,7 @@ class AppOrder_pub(Wxpay_client_pub):
 
     def get_request_params(self):
         '''
-        return sign, noncestr, timestamp
+        return sign, noncestr, timestamp, package
         '''
         self.parameters["appid"] = WxPayConf_pub.APPID  # 公众账号ID
         self.parameters["partnerid"] = WxPayConf_pub.MCHID  # 商户号
