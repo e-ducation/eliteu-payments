@@ -123,7 +123,7 @@ class UrllibClient(object):
 
     def postXml(self, xml, url, second=30):
         """不使用证书"""
-        data = urllib2.urlopen(url, xml, timeout=second).read()
+        data = urllib2.urlopen(url, xml.encode('utf-8'), timeout=second).read()
         return data
 
     def postXmlSSL(self, xml, url, second=30):
@@ -162,7 +162,7 @@ class CurlClient(object):
         # post提交方式
         if post:
             self.curl.setopt(pycurl.POST, True)
-            self.curl.setopt(pycurl.POSTFIELDS, xml)
+            self.curl.setopt(pycurl.POSTFIELDS, xml.encode('utf-8'))
         buff = StringIO()
         self.curl.setopt(pycurl.WRITEFUNCTION, buff.write)
 
