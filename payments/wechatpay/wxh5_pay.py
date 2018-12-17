@@ -302,7 +302,6 @@ class UnifiedOrderH5_pub(WxpayH5_client_pub):
 
         self.parameters["appid"] = WxH5PayConf_pub.APPID   # 公众账号ID
         self.parameters["mch_id"] = WxH5PayConf_pub.MCHID    # 商户号
-        self.parameters["spbill_create_ip"] = get_out_ip()  # 终端ip
         self.parameters["nonce_str"] = self.createNoncestr()    # 随机字符串
         self.parameters["sign"] = self.getSign(self.parameters)    # 签名
         return self.arrayToXml(self.parameters)
@@ -332,6 +331,16 @@ class UnifiedOrderH5_pub(WxpayH5_client_pub):
         result = self.result
         return result
 
+    def get_client_ip(self, request):
+        try:
+            ip = request.META['HTTP_X_REAL_IP']
+        except Exception as ex:
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                ip = x_forwarded_for.split(',')[-1].strip()
+            else:
+                ip = request.META.get('REMOTE_ADDR')
+        return ip
 
 class OrderQueryH5_pub(WxpayH5_client_pub):
     """订单查询接口"""
@@ -458,15 +467,3 @@ class NativeCallH5_pub(WxpayH5_server_pub):
         """获取product_id"""
         product_id = self.data["product_id"]
         return product_id
-
-
-def get_out_ip():
-    """
-    获取外网IP
-    :return:
-    """
-    try:
-        my_ip = load(urlopen('http://httpbin.org/ip'))['origin']
-    except Exception as ex:
-        my_ip = ""
-    return my_ip
