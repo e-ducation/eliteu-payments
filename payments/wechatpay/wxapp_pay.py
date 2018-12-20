@@ -398,9 +398,10 @@ class OrderQuery_pub(Wxpay_client_pub):
     def createXml(self):
         """生成接口参数xml"""
 
-        #检测必填参数
-        if any(self.parameters[key] is None for key in ("out_trade_no", "transaction_id")):
-            raise ValueError("missing parameter")
+        # TODO 只需其中一个
+        # 检测必填参数
+        # if any(self.parameters[key] is None for key in ("out_trade_no", "transaction_id")):
+        #     raise ValueError("missing parameter")
 
         self.parameters["appid"] = WxPayConf_pub.APPID   # 公众账号ID
         self.parameters["mch_id"] = WxPayConf_pub.MCHID   # 商户号

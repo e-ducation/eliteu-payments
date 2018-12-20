@@ -49,6 +49,8 @@ class AlipaySuccessAPIView(APIView):
 
             post_data = {
                 "trade_type": "alipay",
+                'out_trade_no': out_trade_no,
+                "total_fee": request.query_params.get("total_fee"),
                 "original_data": json.dumps({'data': request.query_params}),
             }
             url_str = ALIPAYSettings.PAY_RESULT_URL + "?out_trade_no=" + out_trade_no
@@ -96,6 +98,8 @@ class AlipayAsyncnotifyAPIView(APIView):
 
                 post_data = {
                     "trade_type": "alipay",
+                    'out_trade_no': out_trade_no,
+                    "total_fee": request.data.get("total_fee"),
                     "original_data": json.dumps({'data': request.data}),
                 }
                 if out_trade_no != "":
@@ -163,6 +167,8 @@ class WechatAsyncnotifyAPIView(APIView):
                 pay_result = wxpay_server_pub.getData()
                 post_data = {
                     'trade_type': trade_type,
+                    'out_trade_no': pay_result.get('out_trade_no'),
+                    "total_fee": pay_result.get("total_fee"),
                     "original_data": json.dumps({'data': request.body}),
                 }
                 if pay_result.get('attach'):
