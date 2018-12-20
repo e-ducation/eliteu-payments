@@ -20,6 +20,8 @@ log = logging.getLogger(__name__)
 # 网关地址
 _GATEWAY = 'https://mapi.alipay.com/gateway.do?'
 
+SERVER_URL = 'https://openapi.alipay.com/gateway.do'
+
 
 def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
     """
@@ -128,7 +130,6 @@ def create_direct_pay_by_user(tn, body, subject, total_fee, http_host, extra_com
 
     params, prestr = params_filter(params)
 
-
     params['sign'] = build_mysign(prestr, ALIPAYSettings.ALIPAY_KEY, ALIPAYSettings.ALIPAY_SIGN_TYPE)
     params['sign_type'] = ALIPAYSettings.ALIPAY_SIGN_TYPE
     log.error(_GATEWAY + urlencode(params))
@@ -145,9 +146,6 @@ def create_direct_net_pay_by_user(tn, subject, body, total_fee, default_bank):
     :param default_bank:
     :return:
     """
-    log.error('------create_direct_net_pay_by_user------------------')
-    log.error(extend_params)
-    log.error(body)
     params = {}
     params['service'] = 'create_direct_pay_by_user'
     params['payment_type'] = '1'
@@ -329,3 +327,21 @@ def notify_verify(post):
     if veryfy_result.lower().strip() == 'true':
         return True
     return False
+
+
+class AlipayVerify(object):
+    """
+    验签
+    """
+
+    def __init__(self):
+        self.data = {}
+
+    def saveData(self, data):
+        self.data = data
+
+    def getData(self):
+        return self.data
+
+    def checkSign(self):
+        return notify_verify(self.data)

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import rsa
 import types
+import base64
+from django.conf import settings
 
 
 def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
@@ -27,3 +30,28 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
         return s.decode('utf-8', errors).encode(encoding, errors)
     else:
         return s
+
+
+class AlipayAppVerify(object):
+    """
+    验签
+    """
+    def __init__(self):
+        self.data = {}
+        with open(settings.ALIPAY_APP_INFO['basic_info']['ALIPAY_RSA_PUBLIC_KEY'], 'r') as fp:
+            self.public_key = fp.read()
+
+    def saveData(self, data):
+        self.data = data
+
+    def getData(self):
+        return self.data
+
+    def checkSign(self):
+        params = []
+        sign = base64.b64decode(self.data['sign'])
+        for k, v in sorted(self.data.items()):
+            if k not in ('sign', 'sign_type'):
+                params.append('{k}={v}'.format(k=smart_str(k), v=smart_str(v)))
+        sign_params = '&'.join(params)
+        return rsa.verify(sign_params, sign, rsa.PublicKey.load_pkcs1_openssl_pem(self.public_key))
