@@ -1,19 +1,15 @@
 # -*- coding:utf-8 -*-
 from __future__ import unicode_literals
 
+import json
 import thread
 import logging
 import requests
 
-from django.urls import reverse
-from django.conf import settings
 from django.http import HttpResponseRedirect, HttpResponse
-
 from rest_framework.views import APIView
-from alipay.aop.api.util.SignatureUtils import get_sign_content, verify_with_rsa
-
 from payments.alipay.alipay import notify_verify
-from payments.alipay.app_alipay import smart_str
+from payments.alipay.app_alipay import AlipayAppVerify
 from payments.wechatpay.wxapp_pay import Wxpay_server_pub as AppWxpay_server_pub
 from payments.wechatpay.wxpay import Wxpay_server_pub
 from payments.wechatpay.wxh5_pay import WxpayH5_server_pub
@@ -46,17 +42,14 @@ class AlipaySuccessAPIView(APIView):
         """
 
         global lock, dish
+        log.info('************ alipay query params ************')
         if notify_verify(request.query_params):
             out_trade_no = request.query_params.get("out_trade_no", "")
             extra_common_param = request.query_params.get("extra_common_param")
 
             post_data = {
                 "trade_type": "alipay",
-                "out_trade_no": out_trade_no,
-                "extra_common_param": extra_common_param,
-                "trade_no": request.query_params.get("trade_no"),
-                "total_fee": request.query_params.get("total_fee"),
-                "trade_email": request.query_params.get("buyer_email"),
+                "original_data": json.dumps({'data': request.query_params}),
             }
             url_str = ALIPAYSettings.PAY_RESULT_URL + "?out_trade_no=" + out_trade_no
             if out_trade_no != "":
@@ -94,25 +87,24 @@ class AlipayAsyncnotifyAPIView(APIView):
         如果商户未正确处理业务通知，存在潜在的风险，商户自行承担因此而产生的所有损失。
         """
 
-        global lock, dish
-        if notify_verify(request.data):
-            extra_common_param = request.data.get("extra_common_param")
-            out_trade_no = request.data.get("out_trade_no", "")
+        try:
+            log.info('************ alipay notify data ************')
+            log.info(request.data)
+            if notify_verify(request.data):
+                extra_common_param = request.data.get("extra_common_param")
+                out_trade_no = request.data.get("out_trade_no", "")
 
-            post_data = {
-                "trade_type": "alipay",
-                "out_trade_no": out_trade_no,
-                "trade_no": request.data.get("trade_no"),
-                "total_fee": request.data.get("total_fee"),
-                "buyer_email": request.data.get("buyer_email"),
-                "extra_common_param": request.data.get("extra_common_param"),
-            }
-
-            if out_trade_no != "":
-                rep = requests.post(extra_common_param, data=post_data)
-                rep_data = rep.json()
-                if rep_data.get('result') == "success":
-                    return HttpResponse('success')
+                post_data = {
+                    "trade_type": "alipay",
+                    "original_data": json.dumps({'data': request.data}),
+                }
+                if out_trade_no != "":
+                    rep = requests.post(extra_common_param, data=post_data)
+                    rep_data = rep.json()
+                    if rep_data.get('result') == "success":
+                        return HttpResponse('success')
+        except Exception, e:
+            log.exception(e)
         return HttpResponse("fail")
 
 
@@ -120,28 +112,20 @@ class AppAlipayAsyncnotifyAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
         """
-        alipay asyncnotify api view
+        app alipay asyncnotify api view
         """
         try:
-            params = {smart_str(k): smart_str(v) for k, v in request.data.iteritems()}
-            sign = params.pop('sign')
-            params.pop('sign_type')
-            with open(settings.ALIPAY_APP_INFO['basic_info']['ALIPAY_RSA_PUBLIC_KEY'], 'r') as fp:
-                public_key = fp.read()
-
-            if verify_with_rsa(public_key, get_sign_content(params), sign):
+            log.info('************ alipay app notify data ************')
+            log.info(request.data)
+            verify_srv = AlipayAppVerify()
+            verify_srv.saveData(request.data)
+            if verify_srv.checkSign():
                 passback_params = request.data.get("passback_params")
                 out_trade_no = request.data.get("out_trade_no", "")
-
                 post_data = {
-                    "trade_type": "alipay",
-                    "out_trade_no": out_trade_no,
-                    "trade_no": request.data.get("trade_no"),
-                    "total_fee": request.data.get("total_amount"),
-                    "buyer_email": request.data.get("buyer_email"),
-                    "extra_common_param": request.data.get("passback_params"),
+                    "trade_type": "alipay_app",
+                    "original_data": json.dumps({'data': request.data}),
                 }
-
                 if out_trade_no != "":
                     rep = requests.post(passback_params, data=post_data)
                     rep_data = rep.json()
@@ -161,27 +145,33 @@ class WechatAsyncnotifyAPIView(APIView):
         """
         微信回调支付
         """
-        wxpay_server_pub = Wxpay_server_pub()
-        wxpay_server_pub.saveData(request.body)
-        if wxpay_server_pub.getData().get('trade_type') == "APP":
-            wxpay_server_pub = AppWxpay_server_pub()
+        try:
+            ret_str = 'FAIL'
+            log.info('********** wechatpay notify **********')
+            log.info(request.body)
+            wxpay_server_pub = Wxpay_server_pub()  # NATIVE pay
             wxpay_server_pub.saveData(request.body)
-        ret_str = 'FAIL'
-        log.error(request.body)
-        if wxpay_server_pub.checkSign():
-            pay_result = wxpay_server_pub.getData()
-            post_data = {
-                'trade_type': 'wechat',
-                'wechat_trade_type': pay_result.get('trade_type'),
-                'trade_no': pay_result.get('transaction_id'),
-                "total_fee": pay_result.get("total_fee"),
-                'out_trade_no': pay_result.get('out_trade_no'),
-            }
-            if pay_result.get('attach'):
-                rep = requests.post(pay_result['attach'], data=post_data)
-                rep_data = rep.json()
-                if rep_data.get('result') == "success":
-                    ret_str = 'SUCCESS'
+            resp_trade_type = wxpay_server_pub.getData().get('trade_type')
+            if resp_trade_type == "APP":
+                wxpay_server_pub = AppWxpay_server_pub()
+                wxpay_server_pub.saveData(request.body)
+                trade_type = 'wechat_app'
+            elif resp_trade_type == "NATIVE":
+                trade_type = 'wechat'
+
+            if wxpay_server_pub.checkSign():
+                pay_result = wxpay_server_pub.getData()
+                post_data = {
+                    'trade_type': trade_type,
+                    "original_data": json.dumps({'data': request.body}),
+                }
+                if pay_result.get('attach'):
+                    rep = requests.post(pay_result['attach'], data=post_data)
+                    rep_data = rep.json()
+                    if rep_data.get('result') == "success":
+                        ret_str = 'SUCCESS'
+        except Exception, e:
+            log.exception(e)
         return HttpResponse(wxpay_server_pub.arrayToXml({'return_code': ret_str}))
 
 
@@ -202,10 +192,11 @@ class WechatH5AsyncnotifyAPIView(APIView):
         if wxpayh5_server_pub.checkSign():
             pay_result = wxpayh5_server_pub.getData()
             post_data = {
-                'trade_type': 'wechat',
+                'trade_type': 'wechat_h5',
                 'trade_no': pay_result.get('transaction_id'),
                 "total_fee": pay_result.get("total_fee"),
                 'out_trade_no': pay_result.get('out_trade_no'),
+                "original_data": json.dumps({'data': request.body}),
             }
             if pay_result.get('attach'):
                 rep = requests.post(pay_result['attach'], data=post_data)
