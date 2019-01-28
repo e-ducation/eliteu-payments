@@ -44,7 +44,7 @@ setup(
     author='eliteu',
     description='eliteu-payments',
     license='AGPL',
-    package=['payments'],
+    packages=['payments'],
     url='https://github.com/e-ducation/eliteu-payments',
     classifiers=[
         'Development Status :: 3 - Alpha',
