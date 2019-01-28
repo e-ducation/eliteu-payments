@@ -6,13 +6,6 @@ from setuptools import setup
 
 
 VERSION = '0.0.1'
-PACKAGES = [
-    'payments',
-    'payments.alipay',
-    'payments.wechatpay',
-    'payments.api',
-    'payments.migrations'
-]
 
 
 def is_requirement(line):
@@ -54,7 +47,7 @@ setup(
     author='eliteu',
     description='eliteu-payments',
     license='AGPL',
-    packages=PACKAGES,
+    packages=find_packages(exclude=["tests"]),
     url='https://github.com/e-ducation/eliteu-payments',
     classifiers=[
         'Development Status :: 3 - Alpha',
