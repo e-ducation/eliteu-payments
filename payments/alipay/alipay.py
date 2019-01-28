@@ -264,7 +264,7 @@ def create_refund_fastpay_by_user(batch_no, batch_num, detail_data):
     params['notify_url'] = ALIPAYSettings.ALIPAY_REFUND_NOTIFY_URL
 
     # 业务参数
-    params['seller_email'] = UnionSettings.ALIPAY_SELLER_EMAIL
+    params['seller_email'] = ALIPAYSettings.ALIPAY_SELLER_EMAIL
     params['refund_date'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())   # 订单名称，显示在支付宝收银台里的“商品名称”里，显示在支付宝的交易管理的“商品名称”的列表里。
     params['batch_no'] = batch_no
     params['batch_num'] = batch_num

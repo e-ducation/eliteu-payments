@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import rsa
 import types
 import base64
