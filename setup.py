@@ -6,7 +6,13 @@ from setuptools import setup
 
 
 VERSION = '0.0.1'
-PACKAGES = ['payments']
+PACKAGES = [
+    'payments',
+    'payments.alipay',
+    'payments.wechatpay',
+    'payments.api',
+    'payments.migrations'
+]
 
 
 def is_requirement(line):
