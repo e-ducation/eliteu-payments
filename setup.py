@@ -5,6 +5,10 @@ Setup script for the eliteu payments
 from setuptools import setup
 
 
+VERSION = '0.0.1'
+PACKAGES = ['payments']
+
+
 def is_requirement(line):
     """
     Return True if the requirement line is a package requirement;
@@ -40,11 +44,11 @@ def load_requirements(*requirements_paths):
 
 setup(
     name='eliteu-payments',
-    version='0.0.1',
+    version=VERSION,
     author='eliteu',
     description='eliteu-payments',
     license='AGPL',
-    packages=['payments'],
+    packages=PACKAGES,
     url='https://github.com/e-ducation/eliteu-payments',
     classifiers=[
         'Development Status :: 3 - Alpha',
