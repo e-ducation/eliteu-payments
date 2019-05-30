@@ -57,4 +57,9 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     install_requires=load_requirements('requirements/base.txt'),
+    entry_points={
+        'lms.djangoapp': [
+            'payments = payments.apps:PaymentsConfig',
+        ],
+    },
 )
