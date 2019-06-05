@@ -1,4 +1,6 @@
-
+"""
+Settings overrides for Payments in LMS/Production.
+"""
 # WECHAT_APP_PAY
 WECHAT_APP_PAY_INFO = {
     "basic_info": {
@@ -88,6 +90,7 @@ ALIPAY_INFO = {
         "SIGN_TYPE": "",
         "RETURN_URL": "",
         "NOTIFY_URL": "",
+        "PAY_RESULT_URL": "",
         "REFUND_NOTIFY_URL": "",
         "SHOW_URL": "",
         "ERROR_NOTIFY_URL": "",

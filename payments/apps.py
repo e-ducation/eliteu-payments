@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 from django.apps import AppConfig
 from openedx.core.djangoapps.plugins.constants import (
-    ProjectType, PluginURLs, PluginSettings
+    ProjectType, PluginURLs, PluginSettings, SettingsType
 )
 
 
@@ -20,9 +20,10 @@ class PaymentsConfig(AppConfig):
         },
         PluginSettings.CONFIG: {
             ProjectType.LMS: {
-                'devstack': {
-                    PluginSettings.RELATIVE_PATH: u'settings.lms_production',
-                },
+                SettingsType.DEVSTACK: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
+                SettingsType.AWS: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
+                SettingsType.COMMON: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
+                SettingsType.TEST: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
             }
         },
     }
