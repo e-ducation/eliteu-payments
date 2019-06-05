@@ -79,9 +79,9 @@ def build_mysign(prestr, key, sign_type='MD5'):
 
 # 即时到账交易接口
 def create_direct_pay_by_user(tn, body, subject, total_fee, http_host, extra_common_param=''):
-    log.error('------create direct pay by -user------------------')
-    log.error(extra_common_param)
-    log.error(body)
+    log.info('------create direct pay by -user------------------')
+    log.info(extra_common_param)
+    log.info(body)
     params = {}
     params['service'] = 'create_direct_pay_by_user'
     params['payment_type'] = '1'
