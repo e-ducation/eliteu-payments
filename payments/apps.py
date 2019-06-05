@@ -22,8 +22,7 @@ class PaymentsConfig(AppConfig):
             ProjectType.LMS: {
                 SettingsType.DEVSTACK: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
                 SettingsType.AWS: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
-                SettingsType.COMMON: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
-                SettingsType.TEST: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
+                SettingsType.PRODUCTION: {PluginSettings.RELATIVE_PATH: u'settings.lms_production'},
             }
         },
     }
