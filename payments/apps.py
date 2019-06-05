@@ -29,7 +29,7 @@ class PaymentsConfig(AppConfig):
         PluginURLs.CONFIG: {
             ProjectType.LMS: {
                 PluginURLs.NAMESPACE: u'payments',
-                PluginURLs.REGEX: u'payments/',
+                PluginURLs.REGEX: u'',
             }
         },
 
